@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 const app = express();
 app.use(express.json());
-app.use(cors('http://localhost:5173'));
+app.use(cors());
 
 const users = [];
 
