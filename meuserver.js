@@ -7,67 +7,72 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const users = [];
-
+// Criar usuário
 app.post('/users', async (req, res) => {
-    await prisma.user.create({
-        data: {
-            email: req.body.email,
-            name: req.body.name,
-            age: req.body.age
-        }
-    })
-})
-
-app.get('/users', async (req, res) => {
-    let users = []
-    if(req.query){
-        users = await prisma.user.findMany({
-            where: {
-                name: req.query.name, 
-                email: req.query.email, 
-                age: req.query.age
+    try {
+        const newUser = await prisma.user.create({
+            data: {
+                email: req.body.email,
+                name: req.body.name,
+                age: Number(req.body.age)
             }
         })
-    } else {
-        users = await prisma.user.findMany() 
-    } //Isso é como um filtro para que o get retorne apenas os usuários que correspondem ao nome, email e idadefornecidos na query
-
-    res.status(200).json(users)
-}) //função de listar usuários
-
-app.put('/users/:id', async (req, res) => {
-    const id = req.params.id;
-    const {email, name, age} = req.body;
-
-    const users = await prisma.user.update({
-        where: { id: String(id) }, //Quem eu vou atualizar??
-        data: { email, name, age }
-    })
-
-    res.status(200).json({user: users, message: "Usuário atualizado com sucesso!"})
+        res.status(201).json(newUser)
+    } catch (error) {
+        res.status(500).json({error: error.message})
+    }
 })
 
-app.delete('/users/:id', async (req, res) => {
-    const id = req.params.id;
-    const users = await prisma.user.delete({
-        where: { id: String(id) }
-    })
+// Listar usuários
+app.get('/users', async (req, res) => {
+    try {
+        let users = []
+        if(Object.keys(req.query).length > 0){
+            users = await prisma.user.findMany({
+                where: {
+                    ...req.query
+                }
+            })
+        } else {
+            users = await prisma.user.findMany()
+        }
+        res.status(200).json(users)
+    } catch (error) {
+        res.status(500).json({error: error.message})
+    }
+})
 
-    res.status(200).json({user: users.name, message: "Usuário deletado com sucesso!"})
+// Atualizar usuário
+app.put('/users/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const {email, name, age} = req.body;
+
+        const user = await prisma.user.update({
+            where: { id },
+            data: { email, name, age: Number(age) }
+        })
+
+        res.status(200).json({user, message: "Usuário atualizado com sucesso!"})
+    } catch (error) {
+        res.status(500).json({error: error.message})
+    }
+})
+
+// Deletar usuário
+app.delete('/users/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const user = await prisma.user.delete({
+            where: { id }
+        })
+        res.status(200).json({user: user.name, message: "Usuário deletado com sucesso!"})
+    } catch (error) {
+        res.status(500).json({error: error.message})
+    }
 })
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, ()=>{
     console.log(`Servidor rodando na porta ${PORT}`)
 })
-/**
- * Criar nossa  API de usuários
- *  - Criar um usuário
- *  - Listar todos os usuários
- *  - Editar um usuário
- *  - Deletar um usuário
- *
- * 
- * 
- */
